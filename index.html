@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capteur de Niveau d'Eau</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+body {
+    min-height: 100vh;
+    background-color: #f9fafb;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #040506;
+    display: flex;
+    align-items: center;
+}
+
+h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #060708;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #0f1012;
+    margin-bottom: 0.75rem;
+}
+
+p {
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.data-card p {
+    color: #ffffff;
+    font-size: 0.875rem;
+}
+
+.card p {
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+section {
+    padding: 1rem 0;
+}
+
+.header-icon {
+    margin-right: 0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+    background-color: #dbeafe;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.grid-cols-1 {
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .md-grid-cols-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+    border: 1px solid #e5e7eb;
+}
+
+.card-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-0.25rem);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.data-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    color: white;
+    padding: 1.5rem;
+    position: relative;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.data-card:hover {
+    transform: translateY(-0.25rem);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.bg-blue-500 {
+    background-color: #3b82f6;
+}
+
+.bg-red-500 {
+    background-color: #ef4444;
+}
+
+.bg-yellow-500 {
+    background-color: #f59e0b;
+}
+
+.text-red-600 {
+    color: #dc2626;
+}
+
+.text-yellow-600 {
+    color: #d97706;
+}
+
+.text-green-600 {
+    color: #059669;
+}
+
+.uppercase {
+    text-transform: uppercase;
+}
+
+.tracking-wider {
+    letter-spacing: 0.05em;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.text-lg {
+    font-size: 1.125rem;
+}
+
+.text-2xl {
+    font-size: 1.5rem;
+}
+
+.text-3xl {
+    font-size: 1.875rem;
+}
+
+.mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.mb-6 {
+    margin-bottom: 1.5rem;
+}
+
+.mr-2 {
+    margin-right: 0.5rem;
+}
+
+.ml-1 {
+    margin-left: 0.25rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.p-2 {
+    padding: 0.5rem;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.p-5 {
+    padding: 1.25rem;
+}
+
+.px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.rounded-full {
+    border-radius: 9999px;
+}
+
+.border {
+    border: 1px solid;
+}
+
+.border-gray-100 {
+    border-color: #f3f4f6;
+}
+
+.border-gray-200 {
+    border-color: #e5e7eb;
+}
+
+.border-gray-700 {
+    border-color: #374151;
+}
+
+.border-b {
+    border-bottom-width: 1px;
+}
+
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.top-3 {
+    top: 0.75rem;
+}
+
+.right-3 {
+    right: 0.75rem;
+}
+
+.opacity-70 {
+    opacity: 0.7;
+}
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
+.max-h-60 {
+    max-height: 15rem;
+}
+
+.h-3 {
+    height: 0.75rem;
+}
+
+.h-4 {
+    height: 1rem;
+}
+
+.h-72 {
+    height: 18rem;
+}
+
+.w-3 {
+    width: 0.75rem;
+}
+
+.w-4 {
+    width: 1rem;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+.table th {
+    background-color: #f9fafb;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: #374151;
+    position: sticky;
+    top: 0;
+}
+
+.table td, .table th {
+    padding: 0.5rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.table tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    color: white;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border: none;
+    font-weight: 500;
+}
+
+.button-blue {
+    background-color: #3b82f6;
+}
+
+.button-blue:hover {
+    background-color: #2563eb;
+}
+
+.button-green {
+    background-color: #10b981;
+}
+
+.button-green:hover {
+    background-color: #059669;
+}
+
+.button-red {
+    background-color: #ef4444;
+}
+
+.button-red:hover {
+    background-color: #dc2626;
+}
+
+.button-gray {
+    background-color: #6b7280;
+}
+
+.button-gray:hover {
+    background-color: #4b5563;
+}
+
+/* 3D visualization styles */
+.scene {
+    perspective: 1200px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.water-tank {
+    width: 180px;
+    height: 280px;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.tank {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border: 3px solid #9ca3af;
+    border-radius: 8px;
+    box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.15),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+
+.water {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    transition: height 1s ease-in-out;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 -2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.ripple {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #93c5fd, #60a5fa, #93c5fd);
+    opacity: 0.8;
+    animation: ripple 2s infinite;
+}
+
+.tank-top {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    height: 30px;
+    background: linear-gradient(135deg, #d1d5db, #9ca3af);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tank-bolt {
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, #374151, #1f2937);
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.measurement-lines {
+    position: absolute;
+    left: -15px;
+    top: 30px;
+    bottom: 0;
+    width: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 20px 0;
+}
+
+.measurement-line {
+    width: 100%;
+    height: 2px;
+    background-color: #6b7280;
+    position: relative;
+}
+
+.measurement-line::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 1px;
+    background-color: #6b7280;
+}
+
+.sensor {
+    position: absolute;
+    width: 70px;
+    height: 45px;
+    left: 50%;
+    top: -60px;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.sensor-body {
+    height: 100%;
+    width: 100%;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border: 2px solid #374151;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(59, 130, 246, 0.2);
+    position: relative;
+}
+
+.sensor-body::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 8px;
+    background-color: #374151;
+    border-radius: 2px;
+}
+
+.sensor-top {
+    width: 85%;
+    height: 60%;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #1f2937;
+    font-weight: bold;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.sensor-bottom {
+    width: 85%;
+    height: 40%;
+    background: linear-gradient(135deg, #374151, #1f2937);
+    border-radius: 0 0 4px 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sensor-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 2px;
+    background-color: #ef4444;
+    border-radius: 1px;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+}
+
+.sensor-mount {
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 15px;
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sensor-mount::before,
+.sensor-mount::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 6px;
+    height: 12px;
+    background-color: #6b7280;
+    border-radius: 0 0 2px 2px;
+}
+
+.sensor-mount::before {
+    left: 6px;
+}
+
+.sensor-mount::after {
+    right: 6px;
+}
+
+.rotation-controls {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.control-button {
+    padding: 8px;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    border: 1px solid #d1d5db;
+    color: #4b5563;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.control-button:hover {
+    background-color: #f3f4f6;
+}
+
+.value-indicator {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.value-box {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: bold;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.level-indicator {
+    left: 50%;
+    top: 20%;
+    transform: translateX(-50%);
+}
+
+.water-level-gauge {
+    position: relative;
+    height: 24px;
+    background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.gauge-needle {
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 24px;
+    background-color: white;
+    border: 3px solid #374151;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    transform: translateX(-50%);
+}
+
+.gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #4b5563;
+}
+
+@keyframes ripple {
+    0% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 0.7;
+    }
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 18rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.gap-3 {
+    gap: 0.75rem;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.disconnected {
+    opacity: 0.5;
+    filter: grayscale(50%);
+}
+
+.connection-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-connected {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-disconnected {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-connecting {
+    background-color: #f59e0b;
+    color: white;
+}
+</style>
+</head>
+<body>
+<!-- Indicateur de statut de connexion -->
+<div id="connection-status" class="connection-status status-connecting">
+    <i class="fas fa-circle mr-2"></i>
+    <span id="connection-text">Connexion en cours...</span>
+</div>
+
+<section id="water-section" class="py-4">
+<h1 class="mb-2 text-gray-800 flex items-center">
+    <div class="header-icon">
+        <i class="fas fa-tint"></i>
+    </div>
+DASHBOARD CAPTEUR DE NIVEAU D'EAU
+</h1>
+<p class="text-sm text-gray-500 mb-6" id="last-updated">En attente de données...</p>
+
+<!-- Carte principale - Niveau d'eau -->
+<div class="grid grid-cols-1 md-grid-cols-2 gap-6 mb-6">
+    <div id="water-level-card" class="data-card bg-blue-500 border border-gray-700">
+        <i class="fas fa-wifi absolute top-3 right-3 opacity-70"></i>
+        <p class="uppercase tracking-wider text-sm font-medium mb-2">Niveau d'eau actuel</p>
+        <div class="flex items-center justify-between mt-4">
+            <p class="text-3xl font-bold">
+                <span id="current-level">--</span>
+                <span class="text-lg ml-1">cm</span>
+            </p>
+            <div class="text-2xl">
+                <i id="level-icon" class="fas fa-equals opacity-70"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <div id="status-indicator" class="w-3 h-3 rounded-full mr-2 bg-green-500"></div>
+            <p class="text-sm font-medium">Niveau <span id="current-status">En attente</span></p>
+        </div>
+    </div>
+    
+    <!-- Jauge de niveau d'eau -->
+    <div class="card p-4">
+        <h3 class="text-sm font-semibold mb-2 text-gray-700">État du niveau d'eau</h3>
+        <div class="water-level-gauge">
+            <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
+        </div>
+        <div class="gauge-labels">
+            <span>Bas</span>
+            <span>Normal</span>
+            <span>Élevé</span>
+        </div>
+        <p id="gauge-status" class="mt-2 text-center font-medium text-sm text-gray-600">
+            En attente de données
+        </p>
+        
+        <!-- Santé du système -->
+        <div class="mt-4">
+            <h3 class="text-sm font-semibold mb-2 text-gray-700">Santé du système</h3>
+            <div class="flex items-center justify-center">
+                <div id="health-indicator" class="w-4 h-4 rounded-full mr-2 bg-yellow-500"></div>
+                <p id="health-status" class="text-sm font-medium text-gray-700">
+                    Connexion en cours...
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visualisation 3D du réservoir -->
+<div class="card mb-6 border border-gray-200">
+    <h2 class="mb-4">Visualisation 3D du niveau d'eau</h2>
+    <div class="relative w-full h-72 rounded-lg overflow-hidden" style="background: linear-gradient(to bottom, #dbeafe, #bfdbfe);">
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div id="scene" class="scene w-full h-full relative">
+                <div id="scene-3d" class="w-full h-full relative" style="transform-style: preserve-3d; transform: rotateX(15deg) rotateY(25deg);">
+                    <!-- Water Tank -->
+                    <div class="water-tank">
+                        <div class="tank">
+                            <!-- Water Level -->
+                            <div id="water" class="water" style="height: 0%;">
+                                <!-- Water Ripple Effect -->
+                                <div class="ripple"></div>
+                            </div>
+                            <!-- Tank Top -->
+                            <div class="tank-top">
+                                <div class="tank-bolt"></div>
+                                <div class="tank-bolt"></div>
+                                <div class="tank-bolt"></div>
+                            </div>
+                            <!-- Measurement Lines -->
+                            <div class="measurement-lines">
+                                <div class="measurement-line"></div>
+                                <div class="measurement-line"></div>
+                                <div class="measurement-line"></div>
+                                <div class="measurement-line"></div>
+                                <div class="measurement-line"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rotation Controls -->
+        <div class="rotation-controls">
+            <button id="rotate-left" class="control-button" title="Rotation gauche">
+                <i class="fas fa-undo-alt"></i>
+            </button>
+            <button id="rotate-right" class="control-button" title="Rotation droite">
+                <i class="fas fa-redo-alt"></i>
+            </button>
+            <button id="rotate-reset" class="control-button" title="Réinitialiser la vue">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+        
+        <!-- Valeur actuelle -->
+        <div class="value-indicator level-indicator">
+            <div class="value-box">
+                <i class="fas fa-tint mr-1"></i>
+                <span id="level-display">--</span> cm
+            </div>
+        </div>
+        
+        <!-- Indicateur de statut -->
+        <div class="absolute top-4 left-4 z-10">
+            <div class="bg-white rounded-lg p-2 shadow-md border">
+                <div class="flex items-center">
+                    <div id="status-3d-indicator" class="w-2 h-2 rounded-full mr-2 bg-yellow-500"></div>
+                    <span id="status-3d-text" class="text-xs font-medium text-gray-700">En attente</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphique niveau d'eau -->
+<div class="card p-5 border border-gray-100 card-hover mb-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Évolution du niveau d'eau dans le temps</h3>
+    <div class="chart-container">
+        <canvas id="waterLevelChart"></canvas>
+    </div>
+</div>
+
+<!-- Tableau de données historiques -->
+<div class="card p-5 overflow-hidden border border-gray-100 card-hover mb-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3">Historique des niveaux d'eau</h3>
+    <div class="max-h-60 overflow-y-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="p-2 text-left border-b border-gray-200">Heure</th>
+                    <th class="p-2 text-center border-b border-gray-200">Niveau (cm)</th>
+                    <th class="p-2 text-center border-b border-gray-200">État</th>
+                    <th class="p-2 text-center border-b border-gray-200">Variation</th>
+                </tr>
+            </thead>
+            <tbody id="water-history">
+                <tr>
+                    <td colspan="4" class="p-4 text-center text-gray-500">
+                        En attente de données du capteur...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Gestion des données -->
+<div class="card p-5 border border-gray-100">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Gestion des données</h3>
+    <div class="flex flex-wrap gap-3">
+        <button id="history-btn" class="button button-blue">
+            <i class="fas fa-history mr-2"></i>
+            <span>Historique complet</span>
+        </button>
+        <button id="excel-btn" class="button button-green">
+            <i class="fas fa-file-excel mr-2"></i>
+            <span>Exporter Excel</span>
+        </button>
+        <button id="pdf-btn" class="button button-red">
+            <i class="fas fa-file-pdf mr-2"></i>
+            <span>Exporter PDF</span>
+        </button>
+        <button id="reset-btn" class="button button-gray">
+            <i class="fas fa-trash-alt mr-2"></i>
+            <span>Réinitialiser</span>
+        </button>
+        <button id="reconnect-btn" class="button button-blue">
+            <i class="fas fa-sync-alt mr-2"></i>
+            <span>Reconnecter</span>
+        </button>
+    </div>
+</div>
+</section>
+
+<script>
+// Variables globales
+let waterData = [];
+let historicalData = [];
+let currentLevel = 0;
+let currentStatus = 'En attente';
+let rotation = { x: 15, y: 25 };
+let socket = null;
+let waterLevelChart;
+let isConnected = false;
+let reconnectAttempts = 0;
+let maxReconnectAttempts = 5;
+let reconnectInterval = null;
+
+// Configuration WebSocket
+const SOCKET_CONFIG = {
+    url: 'https://server-cassur.onrender.com',
+    options: {
+        timeout: 5000,
+        forceNew: true,
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000
+    }
+};
+
+// Éléments DOM
+const lastUpdatedElement = document.getElementById('last-updated');
+const currentLevelElement = document.getElementById('current-level');
+const levelIconElement = document.getElementById('level-icon');
+const statusIndicatorElement = document.getElementById('status-indicator');
+const currentStatusElement = document.getElementById('current-status');
+const waterLevelCardElement = document.getElementById('water-level-card');
+const waterElement = document.getElementById('water');
+const levelDisplayElement = document.getElementById('level-display');
+const scene3dElement = document.getElementById('scene-3d');
+const gaugeNeedleElement = document.getElementById('gauge-needle');
+const gaugeStatusElement = document.getElementById('gauge-status');
+const healthIndicatorElement = document.getElementById('health-indicator');
+const healthStatusElement = document.getElementById('health-status');
+const waterHistoryElement = document.getElementById('water-history');
+const status3dIndicatorElement = document.getElementById('status-3d-indicator');
+const status3dTextElement = document.getElementById('status-3d-text');
+const connectionStatusElement = document.getElementById('connection-status');
+const connectionTextElement = document.getElementById('connection-text');
+
+// Contrôles de rotation
+document.getElementById('rotate-left').addEventListener('click', () => {
+    rotation.y -= 15;
+    updateRotation();
+});
+
+document.getElementById('rotate-right').addEventListener('click', () => {
+    rotation.y += 15;
+    updateRotation();
+});
+
+document.getElementById('rotate-reset').addEventListener('click', () => {
+    rotation = { x: 15, y: 25 };
+    updateRotation();
+});
+
+function updateRotation() {
+    if (scene3dElement) {
+        scene3dElement.style.transform = `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`;
+    }
+}
+
+function updateConnectionStatus(status, message) {
+    if (!connectionStatusElement || !connectionTextElement) return;
+    
+    // Supprimer toutes les classes de statut
+    connectionStatusElement.className = connectionStatusElement.className
+        .split(' ')
+        .filter(c => !c.startsWith('status-'))
+        .join(' ');
+    
+    // Ajouter la nouvelle classe de statut
+    connectionStatusElement.className += ` status-${status}`;
+    connectionTextElement.textContent = message;
+    
+    // Mettre à jour l'icône
+    const icon = connectionStatusElement.querySelector('i');
+    if (icon) {
+        icon.className = status === 'connected' ? 'fas fa-circle mr-2' : 
+                        status === 'connecting' ? 'fas fa-circle-notch fa-spin mr-2' : 
+                        'fas fa-exclamation-circle mr-2';
+    }
+}
+
+function connectToSocketServer() {
+    try {
+        console.log('🔌 Tentative de connexion au serveur WebSocket...');
+        updateConnectionStatus('connecting', 'Connexion en cours...');
+        
+        // Déconnecter l'ancienne connexion si elle existe
+        if (socket) {
+            socket.disconnect();
+            socket = null;
+        }
+        
+        socket = io(SOCKET_CONFIG.url, SOCKET_CONFIG.options);
+        
+        socket.on('connect', () => {
+            console.log('✅ Connecté au serveur de capteurs!');
+            isConnected = true;
+            reconnectAttempts = 0;
+            updateConnectionStatus('connected', 'Connecté au capteur');
+            updateSystemStatus('Système connecté et opérationnel', 'bg-green-500');
+            
+            // Supprimer la classe de déconnexion
+            document.body.classList.remove('disconnected');
+            
+            // Demander les données historiques
+            socket.emit('requestHistoricalData');
+        });
+        
+        socket.on('disconnect', (reason) => {
+            console.log('❌ Déconnecté du serveur:', reason);
+            isConnected = false;
+            updateConnectionStatus('disconnected', 'Connexion perdue');
+            updateSystemStatus('Capteur déconnecté', 'bg-red-500');
+            
+            // Ajouter une classe pour indiquer la déconnexion
+            document.body.classList.add('disconnected');
+            
+            // Tenter une reconnexion automatique
+            attemptReconnection();
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('❌ Erreur de connexion:', error);
+            isConnected = false;
+            updateConnectionStatus('disconnected', 'Impossible de se connecter');
+            updateSystemStatus('Erreur de connexion au capteur', 'bg-red-500');
+            
+            // Tenter une reconnexion
+            attemptReconnection();
+        });
+        
+        socket.on('sensorData', (data) => {
+            console.log('📊 Données reçues du capteur:', data);
+            console.log('🌊 Niveau d\'eau:', data.waterLevel || data.level);
+            updateSensorData(data);
+        });
+        
+        socket.on('historicalData', (data) => {
+            console.log('📈 Données historiques reçues:', data?.length || 0, 'enregistrements');
+            updateHistoricalData(data);
+        });
+        
+        socket.on('error', (error) => {
+            console.error('❌ Erreur WebSocket:', error);
+            isConnected = false;
+            updateConnectionStatus('disconnected', 'Erreur de communication');
+            updateSystemStatus('Problème de communication', 'bg-red-500');
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation de la connexion:', error);
+        updateConnectionStatus('disconnected', 'Erreur d\'initialisation');
+        updateSystemStatus('Erreur de connexion', 'bg-red-500');
+    }
+}
+
+function attemptReconnection() {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+        console.log('❌ Maximum de tentatives de reconnexion atteint');
+        updateConnectionStatus('disconnected', 'Connexion échouée');
+        updateSystemStatus('Impossible de se connecter au capteur', 'bg-red-500');
+        return;
+    }
+    
+    if (reconnectInterval) {
+        clearTimeout(reconnectInterval);
+    }
+    
+    reconnectAttempts++;
+    const delay = 2000 * reconnectAttempts; // Délai progressif
+    
+    console.log(`🔄 Tentative de reconnexion ${reconnectAttempts}/${maxReconnectAttempts} dans ${delay/1000}s`);
+    updateConnectionStatus('connecting', `Reconnexion (${reconnectAttempts}/${maxReconnectAttempts})...`);
+    updateSystemStatus(`Tentative de reconnexion ${reconnectAttempts}/${maxReconnectAttempts}`, 'bg-yellow-500');
+    
+    reconnectInterval = setTimeout(() => {
+        connectToSocketServer();
+    }, delay);
+}
+
+function manualReconnect() {
+    console.log('🔄 Reconnexion manuelle demandée');
+    reconnectAttempts = 0;
+    
+    if (reconnectInterval) {
+        clearTimeout(reconnectInterval);
+        reconnectInterval = null;
+    }
+    
+    updateConnectionStatus('connecting', 'Reconnexion en cours...');
+    updateSystemStatus('Reconnexion manuelle en cours...', 'bg-yellow-500');
+    
+    connectToSocketServer();
+}
+
+function updateSystemStatus(message, colorClass) {
+    if (healthIndicatorElement && healthStatusElement) {
+        healthIndicatorElement.className = healthIndicatorElement.className
+            .split(' ')
+            .filter(c => !c.startsWith('bg-'))
+            .join(' ');
+        
+        healthIndicatorElement.className += ' ' + colorClass;
+        healthStatusElement.textContent = message;
+    }
+}
+
+function updateSensorData(data) {
+    if (!data || (typeof data.level === 'undefined' && typeof data.waterLevel === 'undefined')) {
+        console.warn('⚠️ Données de capteur invalides reçues:', data);
+        return;
+    }
+    
+    console.log('🔄 Mise à jour des données capteurs:', data);
+    
+    // Supprimer la classe de déconnexion
+    document.body.classList.remove('disconnected');
+    
+    // Support pour les deux formats : 'level' et 'waterLevel'
+    currentLevel = parseFloat(data.level || data.waterLevel) || 0;
+    currentStatus = data.status || determineStatus(currentLevel);
+    
+    const newDataPoint = {
+        time: new Date().toLocaleTimeString(),
+        level: currentLevel,
+        status: currentStatus,
+        variation: waterData.length > 0 ? currentLevel - waterData[waterData.length - 1].level : 0,
+        timestamp: new Date().toISOString()
+    };
+    
+    waterData.push(newDataPoint);
+    
+    // Garder seulement les 24 derniers points pour le graphique
+    if (waterData.length > 24) {
+        waterData.shift();
+    }
+    
+    // Ajouter aux données historiques
+    historicalData.unshift({...newDataPoint});
+    
+    // Limiter l'historique
+    if (historicalData.length > 1000) {
+        historicalData.pop();
+    }
+    
+    updateUI();
+    
+    if (lastUpdatedElement) {
+        lastUpdatedElement.textContent = `Dernière mise à jour : ${new Date().toLocaleString()}`;
+    }
+    
+    saveToLocalStorage();
+}
+
+function updateHistoricalData(data) {
+    if (!Array.isArray(data)) {
+        console.warn('⚠️ Format de données historiques invalide');
+        return;
+    }
+    
+    console.log('📈 Mise à jour des données historiques:', data.length, 'enregistrements');
+    
+    historicalData = data || [];
+    
+    // Mettre à jour les données du graphique avec les derniers points
+    if (data && data.length > 0) {
+        waterData = data.slice(0, 24).reverse();
+        const latestData = data[0];
+        currentLevel = parseFloat(latestData.level) || 0;
+        currentStatus = latestData.status || 'Normal';
+    }
+    
+    updateUI();
+    saveToLocalStorage();
+}
+
+function updateUI() {
+    // Mise à jour sécurisée des éléments DOM
+    if (currentLevelElement) currentLevelElement.textContent = isConnected ? currentLevel.toFixed(2) : '--';
+    if (levelDisplayElement) levelDisplayElement.textContent = isConnected ? currentLevel.toFixed(2) : '--';
+    if (currentStatusElement) currentStatusElement.textContent = currentStatus;
+    if (status3dTextElement) status3dTextElement.textContent = currentStatus;
+    
+    if (!isConnected) {
+        // Interface en mode déconnecté
+        if (gaugeStatusElement) {
+            gaugeStatusElement.className = 'mt-2 text-center font-medium text-sm text-gray-600';
+            gaugeStatusElement.textContent = 'Connexion au capteur requise';
+        }
+        return;
+    }
+    
+    // Gestion des états visuels basés sur le statut
+    const isHigh = currentStatus === 'High' || currentStatus === 'Élevé';
+    const isLow = currentStatus === 'Low' || currentStatus === 'Faible';
+    
+    if (isHigh) {
+        updateStatusVisuals('high', 'bg-red-500', 'text-red-600', 'fas fa-arrow-up opacity-70', 'Niveau d\'eau élevé détecté');
+    } else if (isLow) {
+        updateStatusVisuals('low', 'bg-yellow-500', 'text-yellow-600', 'fas fa-arrow-down opacity-70', 'Avertissement niveau d\'eau bas');
+    } else {
+        updateStatusVisuals('normal', 'bg-green-500', 'text-green-600', 'fas fa-equals opacity-70', 'Niveau d\'eau normal');
+    }
+    
+    // Animation de l'eau (0-100%)
+    const waterPercentage = Math.min(Math.max(currentLevel, 0), 100);
+    if (waterElement) waterElement.style.height = `${waterPercentage}%`;
+    if (gaugeNeedleElement) gaugeNeedleElement.style.left = `${waterPercentage}%`;
+    
+    // Mise à jour du graphique
+    updateChart();
+    
+    // Mise à jour du tableau historique
+    updateHistoryTable();
+}
+
+function updateStatusVisuals(status, bgColor, textColor, iconClass, message) {
+    // Mise à jour des icônes et couleurs (GARDER LA CARTE TOUJOURS BLEUE)
+    if (levelIconElement) levelIconElement.className = iconClass;
+    if (statusIndicatorElement) statusIndicatorElement.className = `w-3 h-3 rounded-full mr-2 ${bgColor}`;
+    if (status3dIndicatorElement) status3dIndicatorElement.className = `w-2 h-2 rounded-full mr-2 ${bgColor}`;
+    if (waterLevelCardElement) waterLevelCardElement.className = `data-card bg-blue-500 border border-gray-700`;
+    if (healthIndicatorElement) healthIndicatorElement.className = `w-4 h-4 rounded-full mr-2 ${bgColor}`;
+    
+    // Mise à jour des messages
+    if (gaugeStatusElement) {
+        gaugeStatusElement.className = `mt-2 text-center font-medium text-sm ${textColor}`;
+        gaugeStatusElement.textContent = message;
+    }
+    
+    if (healthStatusElement) {
+        const statusMessages = {
+            'high': 'Alerte : Niveau d\'eau élevé',
+            'low': 'Alerte : Niveau d\'eau bas',
+            'normal': 'Système fonctionne normalement'
+        };
+        healthStatusElement.textContent = statusMessages[status];
+    }
+}
+
+function updateChart() {
+    if (waterLevelChart && waterData.length > 0) {
+        waterLevelChart.data.labels = waterData.map(item => item.time);
+        waterLevelChart.data.datasets[0].data = waterData.map(item => item.level);
+        waterLevelChart.update('none');
+    }
+}
+
+function updateHistoryTable() {
+    if (!waterHistoryElement) return;
+    
+    waterHistoryElement.innerHTML = '';
+    
+    if (historicalData.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="4" class="p-4 text-center text-gray-500">
+                ${isConnected ? 'Aucune donnée historique disponible' : 'En attente de connexion au capteur...'}
+            </td>
+        `;
+        waterHistoryElement.appendChild(row);
+        return;
+    }
+    
+    historicalData.slice(0, 20).forEach((data, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        
+        const statusClass = data.status === 'Élevé' || data.status === 'High' ? 'bg-red-500' : 
+                            data.status === 'Faible' || data.status === 'Low' ? 'bg-yellow-500' : 'bg-green-500';
+        
+        const variationClass = data.variation > 0 ? 'text-green-600' : 
+                               data.variation < 0 ? 'text-red-600' : 'text-gray-600';
+        
+        row.innerHTML = `
+            <td class="p-2 text-left border-b border-gray-100">${data.time}</td>
+            <td class="p-2 text-center border-b border-gray-100">${data.level.toFixed(2)}</td>
+            <td class="p-2 text-center border-b border-gray-100">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass} text-white">
+                    ${data.status}
+                </span>
+            </td>
+            <td class="p-2 text-center border-b border-gray-100">
+                <span class="${variationClass}">
+                    ${data.variation > 0 ? '+' : ''}${data.variation.toFixed(2)}
+                </span>
+            </td>
+        `;
+        
+        waterHistoryElement.appendChild(row);
+    });
+}
+
+function initChart() {
+    try {
+        const waterLevelCtx = document.getElementById('waterLevelChart');
+        if (waterLevelCtx) {
+            waterLevelChart = new Chart(waterLevelCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Niveau d\'eau (cm)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#3b82f6',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Niveau (cm)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Heure'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation du graphique:', error);
+    }
+}
+
+function saveToLocalStorage() {
+    try {
+        if (typeof(Storage) !== "undefined") {
+            const dataToSave = {
+                waterData: waterData,
+                historicalData: historicalData,
+                currentLevel: currentLevel,
+                currentStatus: currentStatus,
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('waterLevelData', JSON.stringify(dataToSave));
+        }
+    } catch (error) {
+        console.warn('⚠️ Impossible de sauvegarder dans le localStorage:', error);
+    }
+}
+
+function loadFromLocalStorage() {
+    try {
+        if (typeof(Storage) === "undefined") {
+            return false;
+        }
+        
+        const savedData = localStorage.getItem('waterLevelData');
+        
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            
+            waterData = parsedData.waterData || [];
+            historicalData = parsedData.historicalData || [];
+            currentLevel = parsedData.currentLevel || 0;
+            currentStatus = parsedData.currentStatus || 'Normal';
+            
+            console.log('📂 Données chargées depuis localStorage:', {
+                waterDataPoints: waterData.length,
+                historicalDataPoints: historicalData.length,
+                lastLevel: currentLevel
+            });
+            
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.warn('⚠️ Erreur lors du chargement du localStorage:', error);
+        return false;
+    }
+}
+
+function setupEventListeners() {
+    const historyBtn = document.getElementById('history-btn');
+    const excelBtn = document.getElementById('excel-btn');
+    const pdfBtn = document.getElementById('pdf-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const reconnectBtn = document.getElementById('reconnect-btn');
+    
+    if (historyBtn) historyBtn.addEventListener('click', showFullHistory);
+    if (excelBtn) excelBtn.addEventListener('click', exportToExcel);
+    if (pdfBtn) pdfBtn.addEventListener('click', exportToPDF);
+    if (resetBtn) resetBtn.addEventListener('click', resetData);
+    if (reconnectBtn) reconnectBtn.addEventListener('click', manualReconnect);
+}
+
+function showFullHistory() {
+    if (historicalData.length === 0) {
+        alert('Aucune donnée historique disponible. Veuillez vous connecter au capteur pour recevoir des données.');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90%;
+        overflow: auto;
+    `;
+    
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '×';
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6b7280;
+    `;
+    closeButton.onclick = () => document.body.removeChild(modal);
+    
+    const title = document.createElement('h2');
+    title.textContent = `Historique complet des niveaux d'eau (${historicalData.length} enregistrements)`;
+    title.style.cssText = `
+        margin: 0 0 20px 0;
+        color: #1f2937;
+    `;
+    
+    const table = document.createElement('table');
+    table.style.cssText = `
+        width: 100%;
+        border-collapse: collapse;
+    `;
+    
+    let tableHTML = `
+        <thead>
+            <tr>
+                <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: left; background-color: #f9fafb; color: #374151;">Heure</th>
+                <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; background-color: #f9fafb; color: #374151;">Niveau (cm)</th>
+                <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; background-color: #f9fafb; color: #374151;">Statut</th>
+                <th style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; background-color: #f9fafb; color: #374151;">Variation</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    historicalData.forEach((item, index) => {
+        const statusColor = item.status === 'Élevé' || item.status === 'High' ? '#ef4444' : 
+                            item.status === 'Faible' || item.status === 'Low' ? '#f59e0b' : '#10b981';
+        
+        const variationStyle = item.variation > 0 ? 'color: #10b981;' : 
+                              item.variation < 0 ? 'color: #ef4444;' : 'color: #6b7280;';
+        
+        tableHTML += `
+            <tr style="background-color: ${index % 2 === 0 ? 'white' : '#f9fafb'};">
+                <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: left; color: #1f2937;">${item.time}</td>
+                <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; color: #1f2937;">${item.level.toFixed(2)}</td>
+                <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center;">
+                    <span style="background-color: ${statusColor}; color: white; padding: 2px 8px; border-radius: 9999px; font-size: 12px;">
+                        ${item.status}
+                    </span>
+                </td>
+                <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; ${variationStyle}">
+                    ${item.variation > 0 ? '+' : ''}${item.variation.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += '</tbody>';
+    table.innerHTML = tableHTML;
+    
+    modalContent.style.position = 'relative';
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(title);
+    modalContent.appendChild(table);
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+}
+
+function exportToExcel() {
+    if (historicalData.length === 0) {
+        alert('Aucune donnée à exporter. Veuillez vous connecter au capteur pour recevoir des données.');
+        return;
+    }
+
+    let csv = 'Heure,Niveau d\'eau (cm),État,Variation\n';
+    
+    historicalData.forEach(item => {
+        csv += `${item.time},${item.level.toFixed(2)},${item.status},${item.variation > 0 ? '+' : ''}${item.variation.toFixed(2)}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `donnees_niveau_eau_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('Les données ont été exportées au format CSV.');
+}
+
+function exportToPDF() {
+    if (historicalData.length === 0) {
+        alert('Aucune donnée à exporter. Veuillez vous connecter au capteur pour recevoir des données.');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    
+    let tableRows = '';
+    historicalData.forEach(item => {
+        const statusClass = item.status === 'Élevé' || item.status === 'High' ? 'status-high' : 
+                            item.status === 'Faible' || item.status === 'Low' ? 'status-low' : 'status-normal';
+        const variationClass = item.variation > 0 ? 'positive' : item.variation < 0 ? 'negative' : 'neutral';
+        
+        tableRows += `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.level.toFixed(2)}</td>
+                <td><span class="${statusClass}">${item.status}</span></td>
+                <td class="${variationClass}">
+                    ${item.variation > 0 ? '+' : ''}${item.variation.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    });
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Rapport de surveillance du niveau d'eau</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1, h2 { color: #1f2937; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+                th { background-color: #f9fafb; }
+                .status-high { background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; }
+                .status-low { background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; }
+                .status-normal { background-color: #10b981; color: white; padding: 2px 8px; border-radius: 4px; }
+                .positive { color: #10b981; }
+                .negative { color: #ef4444; }
+                .neutral { color: #6b7280; }
+            </style>
+        </head>
+        <body>
+            <h1>Rapport de surveillance du niveau d'eau</h1>
+            <p>Date du rapport: ${new Date().toLocaleDateString()}</p>
+            <p>Heure du rapport: ${new Date().toLocaleTimeString()}</p>
+            
+            <h2>Résumé</h2>
+            <p>Nombre total d'enregistrements: ${historicalData.length}</p>
+            <p>Niveau d'eau actuel: ${currentLevel.toFixed(2)} cm</p>
+            <p>Statut actuel: ${currentStatus}</p>
+            <p>Statut de connexion: ${isConnected ? 'Connecté' : 'Déconnecté'}</p>
+            
+            <h2>Données historiques</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Heure</th>
+                        <th>Niveau d'eau (cm)</th>
+                        <th>Statut</th>
+                        <th>Variation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+function resetData() {
+    if (!confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    try {
+        // Supprimer les données du localStorage
+        if (typeof(Storage) !== "undefined") {
+            localStorage.removeItem('waterLevelData');
+        }
+    } catch (error) {
+        console.warn('⚠️ Erreur lors de la suppression du localStorage:', error);
+    }
+    
+    // Réinitialiser les données locales
+    waterData = [];
+    historicalData = [];
+    currentLevel = 0;
+    currentStatus = 'En attente';
+    
+    // Mettre à jour l'interface
+    updateUI();
+    
+    // Réinitialiser le graphique
+    if (waterLevelChart) {
+        waterLevelChart.data.labels = [];
+        waterLevelChart.data.datasets[0].data = [];
+        waterLevelChart.update();
+    }
+    
+    alert('Toutes les données locales ont été réinitialisées.');
+    
+    console.log('🗑️ Données réinitialisées');
+}
+
+function initialize() {
+    console.log('=== INITIALISATION DU DASHBOARD NIVEAU D\'EAU (MODE RÉEL) ===');
+    
+    // Initialiser les variables
+    currentLevel = 0;
+    currentStatus = 'En attente';
+    waterData = [];
+    historicalData = [];
+    isConnected = false;
+
+    // État initial du système
+    updateConnectionStatus('connecting', 'Initialisation...');
+    updateSystemStatus('Initialisation du système...', 'bg-yellow-500');
+
+    // Charger les données sauvegardées
+    const dataLoaded = loadFromLocalStorage();
+    if (dataLoaded) {
+        console.log('✅ Données précédentes chargées');
+    }
+    
+    // Initialiser le graphique
+    initChart();
+    
+    // Mettre à jour l'interface
+    updateUI();
+    
+    // Configurer les gestionnaires d'événements
+    setupEventListeners();
+    
+    // Se connecter au serveur WebSocket
+    connectToSocketServer();
+    
+    console.log('=== INITIALISATION TERMINÉE ===');
+    console.log('🔌 En attente de connexion au serveur WebSocket...');
+}
+
+// Initialiser quand le DOM est prêt
+document.addEventListener('DOMContentLoaded', initialize);
+
+// Gérer la fermeture de la page
+window.addEventListener('beforeunload', () => {
+    console.log('🔌 Fermeture de l\'application...');
+    
+    if (reconnectInterval) {
+        clearTimeout(reconnectInterval);
+    }
+    
+    if (socket && socket.connected) {
+        socket.disconnect();
+    }
+    
+    // Sauvegarder les données avant fermeture
+    saveToLocalStorage();
+});
+
+// Gérer la perte/restauration de la connexion réseau
+window.addEventListener('online', () => {
+    console.log('🌐 Connexion réseau restaurée');
+    if (!isConnected) {
+        reconnectAttempts = 0;
+        connectToSocketServer();
+    }
+});
+
+window.addEventListener('offline', () => {
+    console.log('🌐 Connexion réseau perdue');
+    updateConnectionStatus('disconnected', 'Hors ligne');
+});
+
+// Gestion des erreurs globales
+window.addEventListener('error', (event) => {
+    console.error('❌ Erreur globale:', event.error);
+});
+
+// Fonction utilitaire pour valider les données reçues
+function validateSensorData(data) {
+    if (!data) {
+        return { valid: false, error: 'Données nulles ou indéfinies' };
+    }
+    
+    // Support pour les deux formats : 'level' et 'waterLevel'
+    const levelValue = data.level || data.waterLevel;
+    
+    if (typeof levelValue === 'undefined' || levelValue === null) {
+        return { valid: false, error: 'Niveau d\'eau manquant' };
+    }
+    
+    const level = parseFloat(levelValue);
+    if (isNaN(level)) {
+        return { valid: false, error: 'Niveau d\'eau invalide (NaN)' };
+    }
+    
+    if (level < 0 || level > 1000) {
+        return { valid: false, error: 'Niveau d\'eau hors limites (0-1000cm)' };
+    }
+    
+    return { valid: true, level, status: data.status || determineStatus(level) };
+}
+
+// Fonction pour déterminer automatiquement le statut basé sur le niveau
+function determineStatus(level) {
+    if (level > 75) return 'Élevé';
+    if (level < 25) return 'Faible';
+    return 'Normal';
+}
+
+// Fonction pour déboguer la connexion WebSocket
+function debugConnection() {
+    const debugInfo = {
+        isConnected: isConnected,
+        socketState: socket ? socket.connected : 'Socket null',
+        reconnectAttempts: reconnectAttempts,
+        dataPoints: waterData.length,
+        historicalPoints: historicalData.length,
+        lastUpdate: lastUpdatedElement ? lastUpdatedElement.textContent : 'N/A'
+    };
+    
+    console.log('🔍 Debug connexion:', debugInfo);
+    return debugInfo;
+}
+
+// Exposer certaines fonctions pour debug (optionnel)
+if (typeof window !== 'undefined') {
+    window.debugWaterLevel = {
+        debug: debugConnection,
+        reconnect: manualReconnect,
+        reset: resetData,
+        exportData: () => ({ waterData, historicalData, currentLevel, currentStatus })
+    };
+}
+</script>
+</body>
+</html>
